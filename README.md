@@ -1,3 +1,3 @@
-install Haxe
-install OpenFl
-comand start: "lime test html5"
+Install Haxe.
+Install OpenFl.
+Comand start: "lime test html5".

@@ -1,3 +1,6 @@
+package;
+
+
 import openfl.display.Sprite;
 import openfl.display.Shape;
 import openfl.events.Event;
@@ -5,13 +8,17 @@ import openfl.events.MouseEvent;
 import openfl.text.TextField;
 import openfl.text.TextFormat;
 import openfl.text.TextFieldAutoSize;
-import figures.TriangleGenerator;
+import controllers.Generator;
 import haxe.Timer;
 import openfl.display.SimpleButton;
+
+import controllers.MyClick;
+import models.Triangle;
 
 class Main extends Sprite {
 
     var canvas:Shape;
+    var maskShape:Shape;
     public var shapes:Array<Shape>;
     var timer:Timer;
     var numShapesTextField:TextField;
@@ -25,38 +32,50 @@ class Main extends Sprite {
 
         Config.init(stage);
 
-        // функцию создания канваса
         createCanvas();
 
-        // массив хранения форм
         shapes = new Array<Shape>();
 
-        // обработчик события ENTER_FRAME
         addEventListener(Event.ENTER_FRAME, update);
 
-        // таймер для генерации треугольников каждую секунду
         timer = new Timer(1000);
         timer.run = createTriangle;
-        OnClick.mainInstance = this;
-       // обработчик события CLICK для создания фигуры при клике
+        MyClick.mainInstance = this;
+        
         stage.addEventListener(MouseEvent.CLICK, function(event:MouseEvent):Void {
-            OnClick.onClickStage(event, shapes, updateTextFields);
+            MyClick.onClickStage(event);
         });
 
-        // текстовые поля
-        numShapesTextField = createTextField("Количество фигур: 0", Config.centerX, Config.centerY - 20);
-        areaTextField = createTextField("Площадь поверхности: 0 px^2", Config.centerX + 125, Config.centerY - 20);
+        // Been trying to figure out the mask, but can't figure out how it works in openFl. 
+        // So the data output fields are there, but I couldn't get them up.
+        numShapesTextField = createTextField("Number of figures: 0", Config.centerX, Config.centerY - 20);
+        areaTextField = createTextField("Surface area: 0 px^2", Config.centerX + 125, Config.centerY - 20);
+
+        createMask();
     }
 
     function createCanvas():Void {
         canvas = new Shape();
 
-        canvas.graphics.beginFill(0x813232);
+        canvas.graphics.beginFill(0x433281);
         canvas.graphics.drawRect(Config.centerX, Config.centerY, Config.canvasWidth, Config.canvasHeight);
         canvas.graphics.endFill();
 
-        // Добавляю канвас
         addChild(canvas);
+    } 
+
+    function createMask():Void {
+        maskShape = new Shape();
+        maskShape.graphics.beginFill(0xFFFFFF);
+        maskShape.graphics.drawRect(Config.centerX, Config.centerY, Config.canvasWidth, Config.canvasHeight);
+        maskShape.graphics.endFill();
+
+        addChild(maskShape);
+
+        addChild(numShapesTextField);
+        addChild(areaTextField);
+
+        stage.mask = maskShape;
     }
 
     function createTextField(text:String, x:Float, y:Float):TextField {
@@ -75,13 +94,11 @@ class Main extends Sprite {
     }
 
     public function updateTextFields():Void {
-        // обновляю поля
-        numShapesTextField.text = "Количество фигур: " + shapes.length;
-        areaTextField.text = "Площадь поверхности: " + calculateSurfaceArea() + " px^2";
+        numShapesTextField.text = "Number of figures: " + shapes.length;
+        areaTextField.text = "Surface area: " + calculateSurfaceArea() + " px^2";
     }
 
     function calculateSurfaceArea():Float {
-        // рассчитываю площадь поверхности (не факт что точно)
         var totalArea:Float = 0;
         for (shape in shapes) {
             totalArea += shape.width * shape.height;
@@ -90,7 +107,7 @@ class Main extends Sprite {
     }
 
     function createTriangle():Void {
-        var triangle:Shape = TriangleGenerator.createTriangle(Config.centerX, Config.centerY, Config.canvasWidth);
+        var triangle:Shape = Generator.createRandomShape(Config.centerX, Config.centerY);
         shapes.push(triangle);
         addChild(triangle);
 
@@ -98,15 +115,12 @@ class Main extends Sprite {
     }
 
     function update(event:Event):Void {
-        
         updateShapes(1 / stage.frameRate);
-
         removeOutOfRangeShapes();
     }
 
     function updateShapes(elapsedTime:Float):Void {
         for (shape in shapes) {
-            // обновляю позицию на каждом кадре
             shape.y += Config.shapeSpeed * elapsedTime;
         }
     }
@@ -115,14 +129,12 @@ class Main extends Sprite {
         var shapesToRemove:Array<Shape> = [];
 
         for (shape in shapes) {
-            // проверяю, находится ли треугольник за пределами области канваса
-            if (shape.y > Config.centerY + Config.canvasHeight) {
+            if (shape.y > (Config.centerY + 100) + Config.canvasHeight) {
                 shapesToRemove.push(shape);
                 removeChild(shape);
             }
         }
 
-        // удаляю треугольник из массива
         for (shape in shapesToRemove) {
             shapes.remove(shape);
         }
@@ -130,8 +142,6 @@ class Main extends Sprite {
         updateTextFields();
     }
 }
-
-
 
 
 

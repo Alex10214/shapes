@@ -899,7 +899,7 @@ ApplicationMain.main = function() {
 };
 ApplicationMain.create = function(config) {
 	var app = new openfl_display_Application();
-	app.meta.h["build"] = "506";
+	app.meta.h["build"] = "1";
 	app.meta.h["company"] = "Company Name";
 	app.meta.h["file"] = "MyProject";
 	app.meta.h["name"] = "MyProject";
@@ -3338,55 +3338,41 @@ openfl_display_Sprite.prototype = $extend(openfl_display_DisplayObjectContainer.
 	,__properties__: $extend(openfl_display_DisplayObjectContainer.prototype.__properties__,{get_graphics:"get_graphics",set_buttonMode:"set_buttonMode",get_buttonMode:"get_buttonMode"})
 });
 var Main = function() {
-	var _gthis = this;
 	openfl_display_Sprite.call(this);
 	Config.init(this.stage);
 	this.createCanvas();
-	this.createButtons();
 	this.shapes = [];
 	this.addEventListener("enterFrame",$bind(this,this.update));
 	this.timer = new haxe_Timer(1000);
 	this.timer.run = $bind(this,this.createTriangle);
-	OnClick.mainInstance = this;
+	controllers_MyClick.mainInstance = this;
 	this.stage.addEventListener("click",function(event) {
-		OnClick.onClickStage(event,_gthis.shapes,$bind(_gthis,_gthis.updateTextFields));
+		controllers_MyClick.onClickStage(event);
 	});
-	this.numShapesTextField = this.createTextField("Количество фигур: 0",Config.centerX,Config.centerY - 20);
-	this.areaTextField = this.createTextField("Площадь поверхности: 0 px^2",Config.centerX + 125,Config.centerY - 20);
+	this.numShapesTextField = this.createTextField("Number of figures: 0",Config.centerX,Config.centerY - 20);
+	this.areaTextField = this.createTextField("Surface area: 0 px^2",Config.centerX + 125,Config.centerY - 20);
+	this.createMask();
 };
 $hxClasses["Main"] = Main;
 Main.__name__ = "Main";
 Main.__super__ = openfl_display_Sprite;
 Main.prototype = $extend(openfl_display_Sprite.prototype,{
-	createButtons: function() {
-		this.increaseButton = this.createButton("Увеличить",Config.centerX - 50,Config.centerY + Config.canvasHeight + 10,$bind(this,this.increaseSpeed));
-		this.decreaseButton = this.createButton("Уменьшить",Config.centerX + 50,Config.centerY + Config.canvasHeight + 10,$bind(this,this.decreaseSpeed));
-	}
-	,createButton: function(label,x,y,clickHandler) {
-		var button = new openfl_display_SimpleButton();
-		button.set_x(x);
-		button.set_y(y);
-		var textField = this.createTextField(label,0,0);
-		button.set_upState(textField);
-		this.addChild(button);
-		return button;
-	}
-	,increaseSpeed: function() {
-		Config.shapeSpeed += 10;
-		haxe_Log.trace("Увеличена скорость: " + Config.shapeSpeed,{ fileName : "Source/Main.hx", lineNumber : 229, className : "Main", methodName : "increaseSpeed"});
-		haxe_Log.trace(Config.shapeSpeed,{ fileName : "Source/Main.hx", lineNumber : 231, className : "Main", methodName : "increaseSpeed"});
-	}
-	,decreaseSpeed: function() {
-		Config.shapeSpeed -= 10;
-		haxe_Log.trace("Уменьшена скорость: " + Config.shapeSpeed,{ fileName : "Source/Main.hx", lineNumber : 236, className : "Main", methodName : "decreaseSpeed"});
-		haxe_Log.trace(Config.shapeSpeed,{ fileName : "Source/Main.hx", lineNumber : 238, className : "Main", methodName : "decreaseSpeed"});
-	}
-	,createCanvas: function() {
+	createCanvas: function() {
 		this.canvas = new openfl_display_Shape();
-		this.canvas.get_graphics().beginFill(8466994);
+		this.canvas.get_graphics().beginFill(4403841);
 		this.canvas.get_graphics().drawRect(Config.centerX,Config.centerY,Config.canvasWidth,Config.canvasHeight);
 		this.canvas.get_graphics().endFill();
 		this.addChild(this.canvas);
+	}
+	,createMask: function() {
+		this.maskShape = new openfl_display_Shape();
+		this.maskShape.get_graphics().beginFill(16777215);
+		this.maskShape.get_graphics().drawRect(Config.centerX,Config.centerY,Config.canvasWidth,Config.canvasHeight);
+		this.maskShape.get_graphics().endFill();
+		this.addChild(this.maskShape);
+		this.addChild(this.numShapesTextField);
+		this.addChild(this.areaTextField);
+		this.stage.set_mask(this.maskShape);
 	}
 	,createTextField: function(text,x,y) {
 		var textField = new openfl_text_TextField();
@@ -3402,8 +3388,8 @@ Main.prototype = $extend(openfl_display_Sprite.prototype,{
 		return textField;
 	}
 	,updateTextFields: function() {
-		this.numShapesTextField.set_text("Количество фигур: " + this.shapes.length);
-		this.areaTextField.set_text("Площадь поверхности: " + this.calculateSurfaceArea() + " px^2");
+		this.numShapesTextField.set_text("Number of figures: " + this.shapes.length);
+		this.areaTextField.set_text("Surface area: " + this.calculateSurfaceArea() + " px^2");
 	}
 	,calculateSurfaceArea: function() {
 		var totalArea = 0;
@@ -3417,7 +3403,7 @@ Main.prototype = $extend(openfl_display_Sprite.prototype,{
 		return totalArea;
 	}
 	,createTriangle: function() {
-		var triangle = figures_TriangleGenerator.createTriangle(Config.centerX,Config.centerY,Config.canvasWidth);
+		var triangle = controllers_Generator.createRandomShape(Config.centerX,Config.centerY);
 		this.shapes.push(triangle);
 		this.addChild(triangle);
 		this.updateTextFields();
@@ -3442,7 +3428,7 @@ Main.prototype = $extend(openfl_display_Sprite.prototype,{
 		while(_g < _g1.length) {
 			var shape = _g1[_g];
 			++_g;
-			if(shape.get_y() > Config.centerY + Config.canvasHeight) {
+			if(shape.get_y() > Config.centerY + 100 + Config.canvasHeight) {
 				shapesToRemove.push(shape);
 				this.removeChild(shape);
 			}
@@ -3632,52 +3618,6 @@ Lambda.array = function(it) {
 	return a;
 };
 Math.__name__ = "Math";
-var OnClick = function() { };
-$hxClasses["OnClick"] = OnClick;
-OnClick.__name__ = "OnClick";
-OnClick.onClickStage = function(event,shapes,updateTextFields) {
-	var clickX = event.stageX;
-	var clickY = event.stageY;
-	if(clickX >= Config.centerX && clickX <= Config.centerX + Config.canvasWidth && clickY >= Config.centerY && clickY <= Config.centerY + Config.canvasHeight) {
-		var triangleFound = false;
-		var _g = 0;
-		while(_g < shapes.length) {
-			var triangle = shapes[_g];
-			++_g;
-			if(OnClick.isPointInTriangle(clickX,clickY,triangle)) {
-				HxOverrides.remove(shapes,triangle);
-				triangle.parent.removeChild(triangle);
-				updateTextFields();
-				triangleFound = true;
-				break;
-			}
-		}
-		if(!triangleFound) {
-			var newTriangle = figures_TriangleGenerator.createTrianglefromCLick(clickX,clickY);
-			shapes.push(newTriangle);
-			OnClick.mainInstance.addChild(newTriangle);
-		}
-	}
-};
-OnClick.isPointInTriangle = function(x,y,triangle) {
-	var p1_0 = triangle.get_x();
-	var p1_1 = triangle.get_y();
-	var p2_0 = triangle.get_x() + triangle.get_width();
-	var p2_1 = triangle.get_y();
-	var p3_0 = triangle.get_x();
-	var p3_1 = triangle.get_y() + triangle.get_height();
-	var b1 = OnClick.sign(x,y,p1_0,p1_1,p2_0,p2_1) < 0.0;
-	var b2 = OnClick.sign(x,y,p2_0,p2_1,p3_0,p3_1) < 0.0;
-	var b3 = OnClick.sign(x,y,p3_0,p3_1,p1_0,p1_1) < 0.0;
-	if(b1 == b2) {
-		return b2 == b3;
-	} else {
-		return false;
-	}
-};
-OnClick.sign = function(px,py,qx,qy,rx,ry) {
-	return (px - rx) * (qy - ry) - (qx - rx) * (py - ry);
-};
 var Reflect = function() { };
 $hxClasses["Reflect"] = Reflect;
 Reflect.__name__ = "Reflect";
@@ -4025,29 +3965,71 @@ UInt.toFloat = function(this1) {
 		return int + 0.0;
 	}
 };
-var figures_TriangleGenerator = function() { };
-$hxClasses["figures.TriangleGenerator"] = figures_TriangleGenerator;
-figures_TriangleGenerator.__name__ = "figures.TriangleGenerator";
-figures_TriangleGenerator.createTriangle = function(centerX,centerY,canvasWidth) {
-	var triangle = new openfl_display_Shape();
-	triangle.get_graphics().beginFill(figures_TriangleGenerator.randomColor());
-	triangle.get_graphics().drawTriangles(openfl_Vector.toFloatVector(null,null,null,[0,0,50,100,100,0]));
-	triangle.get_graphics().endFill();
-	triangle.set_x(centerX + Math.random() * (canvasWidth - 100));
-	triangle.set_y(centerY - 100);
-	return triangle;
+var controllers_Generator = function() { };
+$hxClasses["controllers.Generator"] = controllers_Generator;
+controllers_Generator.__name__ = "controllers.Generator";
+controllers_Generator.createRandomShape = function(centerX,centerY,onClick) {
+	var randomShape = null;
+	var randomNum = Std.random(6);
+	var randomValue;
+	if(!onClick) {
+		centerX = Math.floor(Math.random() * 720 + 1350);
+		centerY = Math.floor(Math.random() * 600 + 352);
+		centerY = 252;
+	}
+	switch(randomNum) {
+	case 0:
+		randomShape = new models_Triangle(centerX,centerY,controllers_Generator.randomColor());
+		break;
+	case 1:
+		randomShape = new models_Circle(centerX,centerY,controllers_Generator.randomColor());
+		break;
+	case 2:
+		randomShape = new models_Square(centerX,centerY,50,controllers_Generator.randomColor());
+		break;
+	case 3:
+		randomShape = new models_Star(centerX,centerY,50,controllers_Generator.randomColor());
+		break;
+	case 4:
+		randomShape = new models_Polygon(centerX,centerY,50,5,controllers_Generator.randomColor());
+		break;
+	case 5:
+		randomShape = new models_Polygon(centerX,centerY,50,6,controllers_Generator.randomColor());
+		break;
+	}
+	return randomShape;
 };
-figures_TriangleGenerator.createTrianglefromCLick = function(centerX,centerY) {
-	var triangle = new openfl_display_Shape();
-	triangle.get_graphics().beginFill(figures_TriangleGenerator.randomColor());
-	triangle.get_graphics().drawTriangles(openfl_Vector.toFloatVector(null,null,null,[0,0,50,100,100,0]));
-	triangle.get_graphics().endFill();
-	triangle.set_x(centerX);
-	triangle.set_y(centerY);
-	return triangle;
-};
-figures_TriangleGenerator.randomColor = function() {
+controllers_Generator.randomColor = function() {
 	return Std.random(16777215);
+};
+var controllers_MyClick = function() { };
+$hxClasses["controllers.MyClick"] = controllers_MyClick;
+controllers_MyClick.__name__ = "controllers.MyClick";
+controllers_MyClick.onClickStage = function(event) {
+	var clickX = event.stageX;
+	var clickY = event.stageY;
+	if(clickX >= Config.centerX && clickX <= Config.centerX + Config.canvasWidth && clickY >= Config.centerY && clickY <= Config.centerY + Config.canvasHeight) {
+		if(controllers_MyClick.mainInstance != null && controllers_MyClick.mainInstance.shapes.length > 0) {
+			var triangleFound = false;
+			var _g = 0;
+			var _g1 = controllers_MyClick.mainInstance.shapes;
+			while(_g < _g1.length) {
+				var shape = _g1[_g];
+				++_g;
+				if(shape.hitTestPoint(event.stageX,event.stageY,true)) {
+					controllers_MyClick.mainInstance.removeChild(shape);
+					HxOverrides.remove(controllers_MyClick.mainInstance.shapes,shape);
+					triangleFound = true;
+					break;
+				}
+			}
+			if(!triangleFound) {
+				var newTriangle = controllers_Generator.createRandomShape(clickX,clickY,true);
+				controllers_MyClick.mainInstance.shapes.push(newTriangle);
+				controllers_MyClick.mainInstance.addChild(newTriangle);
+			}
+		}
+	}
 };
 var haxe_StackItem = $hxEnums["haxe.StackItem"] = { __ename__:"haxe.StackItem",__constructs__:null
 	,CFunction: {_hx_name:"CFunction",_hx_index:0,__enum__:"haxe.StackItem",toString:$estr}
@@ -23112,7 +23094,7 @@ var lime_utils_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 378568;
+	this.version = 488656;
 };
 $hxClasses["lime.utils.AssetCache"] = lime_utils_AssetCache;
 lime_utils_AssetCache.__name__ = "lime.utils.AssetCache";
@@ -25319,6 +25301,122 @@ lime_utils_UInt8ClampedArray._clamp = function(_in) {
 		return _out;
 	}
 };
+var openfl_display_Shape = function() {
+	openfl_display_DisplayObject.call(this);
+	this.__drawableType = 3;
+};
+$hxClasses["openfl.display.Shape"] = openfl_display_Shape;
+openfl_display_Shape.__name__ = "openfl.display.Shape";
+openfl_display_Shape.__super__ = openfl_display_DisplayObject;
+openfl_display_Shape.prototype = $extend(openfl_display_DisplayObject.prototype,{
+	get_graphics: function() {
+		if(this.__graphics == null) {
+			this.__graphics = new openfl_display_Graphics(this);
+		}
+		return this.__graphics;
+	}
+	,__class__: openfl_display_Shape
+	,__properties__: $extend(openfl_display_DisplayObject.prototype.__properties__,{get_graphics:"get_graphics"})
+});
+var models_Circle = function(centerX,centerY,color) {
+	openfl_display_Shape.call(this);
+	this.get_graphics().beginFill(color);
+	this.get_graphics().drawCircle(0,0,50);
+	this.get_graphics().endFill();
+	this.set_x(centerX);
+	this.set_y(centerY);
+};
+$hxClasses["models.Circle"] = models_Circle;
+models_Circle.__name__ = "models.Circle";
+models_Circle.__super__ = openfl_display_Shape;
+models_Circle.prototype = $extend(openfl_display_Shape.prototype,{
+	__class__: models_Circle
+});
+var models_Polygon = function(centerX,centerY,size,angles,color) {
+	openfl_display_Shape.call(this);
+	this.get_graphics().beginFill(color);
+	var angle = -Math.PI / 2;
+	var _g = 0;
+	var _g1 = angles;
+	while(_g < _g1) {
+		var i = _g++;
+		var x = centerX + size * Math.cos(angle);
+		var y = centerY + size * Math.sin(angle);
+		if(i == 0) {
+			this.get_graphics().moveTo(x,y);
+		} else {
+			this.get_graphics().lineTo(x,y);
+		}
+		angle += 2 * Math.PI / angles;
+	}
+	this.get_graphics().endFill();
+	this.set_x(0);
+	this.set_y(0);
+};
+$hxClasses["models.Polygon"] = models_Polygon;
+models_Polygon.__name__ = "models.Polygon";
+models_Polygon.__super__ = openfl_display_Shape;
+models_Polygon.prototype = $extend(openfl_display_Shape.prototype,{
+	__class__: models_Polygon
+});
+var models_Square = function(centerX,centerY,size,color) {
+	openfl_display_Shape.call(this);
+	this.get_graphics().beginFill(color);
+	this.get_graphics().drawRect(0,0,size,size);
+	this.get_graphics().endFill();
+	this.set_x(centerX);
+	this.set_y(centerY);
+};
+$hxClasses["models.Square"] = models_Square;
+models_Square.__name__ = "models.Square";
+models_Square.__super__ = openfl_display_Shape;
+models_Square.prototype = $extend(openfl_display_Shape.prototype,{
+	__class__: models_Square
+});
+var models_Star = function(centerX,centerY,size,color) {
+	openfl_display_Shape.call(this);
+	this.get_graphics().beginFill(color);
+	var angle = -Math.PI / 2;
+	var _g = 0;
+	while(_g < 10) {
+		var i = _g++;
+		var radius = i % 2 == 0 ? size * 0.5 : size;
+		var x = centerX + radius * Math.cos(angle);
+		var y = centerY + radius * Math.sin(angle);
+		if(i == 0) {
+			this.get_graphics().moveTo(x,y);
+		} else {
+			this.get_graphics().lineTo(x,y);
+		}
+		angle += Math.PI / 5;
+	}
+	this.get_graphics().endFill();
+	this.set_x(0);
+	this.set_y(0);
+};
+$hxClasses["models.Star"] = models_Star;
+models_Star.__name__ = "models.Star";
+models_Star.__super__ = openfl_display_Shape;
+models_Star.prototype = $extend(openfl_display_Shape.prototype,{
+	__class__: models_Star
+});
+var models_Triangle = function(centerX,centerY,color) {
+	openfl_display_Shape.call(this);
+	this.get_graphics().beginFill(color);
+	this.get_graphics().moveTo(0,-50);
+	this.get_graphics().lineTo(50,50);
+	this.get_graphics().lineTo(-50,50);
+	this.get_graphics().lineTo(0,-50);
+	this.get_graphics().endFill();
+	this.set_x(centerX);
+	this.set_y(centerY);
+};
+$hxClasses["models.Triangle"] = models_Triangle;
+models_Triangle.__name__ = "models.Triangle";
+models_Triangle.__super__ = openfl_display_Shape;
+models_Triangle.prototype = $extend(openfl_display_Shape.prototype,{
+	__class__: models_Triangle
+});
 var openfl_Lib = function() { };
 $hxClasses["openfl.Lib"] = openfl_Lib;
 openfl_Lib.__name__ = "openfl.Lib";
@@ -35053,23 +35151,6 @@ openfl_display_ShaderPrecision.toString = function(this1) {
 		return null;
 	}
 };
-var openfl_display_Shape = function() {
-	openfl_display_DisplayObject.call(this);
-	this.__drawableType = 3;
-};
-$hxClasses["openfl.display.Shape"] = openfl_display_Shape;
-openfl_display_Shape.__name__ = "openfl.display.Shape";
-openfl_display_Shape.__super__ = openfl_display_DisplayObject;
-openfl_display_Shape.prototype = $extend(openfl_display_DisplayObject.prototype,{
-	get_graphics: function() {
-		if(this.__graphics == null) {
-			this.__graphics = new openfl_display_Graphics(this);
-		}
-		return this.__graphics;
-	}
-	,__class__: openfl_display_Shape
-	,__properties__: $extend(openfl_display_DisplayObject.prototype.__properties__,{get_graphics:"get_graphics"})
-});
 var openfl_display_SimpleButton = function(upState,overState,downState,hitTestState) {
 	openfl_display_InteractiveObject.call(this);
 	this.__drawableType = 6;
